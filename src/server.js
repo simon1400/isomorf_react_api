@@ -3,10 +3,14 @@ import React    from 'react';
 import ReactDom from 'react-dom/server';
 import { match, RouterContext } from 'react-router';
 import routes from './routes';
+import { Provider } from 'react-redux';
+import configureStore from './redux/configureStore';
 
 const app = express();
 
 app.use((req, res) => {
+	const store = configureStore();
+
 	match({ routes, location: req.url }, (error, redirectLocation, renderProps) => {
     if (redirectLocation) { // Если необходимо сделать redirect
       return res.redirect(301, redirectLocation.pathname + redirectLocation.search);
@@ -20,12 +24,15 @@ app.use((req, res) => {
       return res.status(404).send('Not found');
     }
 
-		const componentHTML = ReactDom.renderToString(<RouterContext {...renderProps} />);
+		const componentHTML = ReactDom.renderToString(
+			<Provider store={store}>
+				<RouterContext {...renderProps} />
+			</Provider>
+		);
 
 		return res.end(renderHTML(componentHTML));
 	})
 
-  
 });
 
 const assetUrl = process.env.NODE_ENV !== 'production' ? 'http://localhost:8050' : '/';
@@ -36,7 +43,7 @@ function renderHTML(componentHTML) {
 		<html>
 			<head>
 				<meta charset="utf-8">
-				<meta name=viewport" content="width=device-width, initial-scale=1.0">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<title>Hello React</title>
 				<link rel="stylsheet" href="${assetUrl}/public/assets/styles.css">
 			</head>
